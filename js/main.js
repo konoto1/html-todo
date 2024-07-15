@@ -12,13 +12,13 @@ const todoData = [];
 submitButtonDOM.addEventListener('click', e => {
     e.preventDefault();
 
-    if (textInputDOM.value.length === 0) {
+    if (!isValidText(textInputDOM.value)) {
         return;
     }
 
     todoData.push(
         {
-            text: textInputDOM.value,
+            text: textInputDOM.value.trim(),
             createdAt: Date.now(),
         }
     );
@@ -75,7 +75,12 @@ function renderTaskList() {
         const updateDOM = buttonsDOM[0];
         updateDOM.addEventListener('click', e => {
             e.preventDefault()
-            todoData[i].text = updateInputDOM.value;
+
+            if (!isValidText(updateInputDOM.value)) {
+                return;
+            }
+
+            todoData[i].text = updateInputDOM.value.trim();
             console.log(updateInputDOM.value);
             renderTaskList();
         });
@@ -98,12 +103,33 @@ function renderTaskList() {
     }
 }
 
-function formatTime(timeInMs) {
-    const time = (Date(timeInMs[Symbol.toPrimitive])).split(' ');
-    const month = new Date().getMonth();
-    const month1 = ('' + month).length === 1 ? `0${month}` : `${month}`;
-    return [time[3], month1, time[2], time[4]].join(' ');
+function formatTime(timeInMS) {
+    const date = new Date();
+    const y = (date.getFullYear());
+    const m = (date.getMonth() + 1 < 10 ? '0' : '') + (date.getMonth() + 1);
+    // const d = (date.getDay()); //savaites diena
+    const d = (date.getDate() < 10 ? '0' : '') + date.getDate(); // menesio diena
+    const h = (date.getHours() < 10 ? '0' : '') + date.getHours();
+    const mn = (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+    const s = (date.getSeconds() < 10 ? '0' : '') + date.getSeconds();
+    return `${y}-${m}-${d} ${h}-${mn}-${s}`
 }
+
+function isValidText(text) {
+    if (typeof text !== 'string'
+        || text.trim() === ''
+        || text[0].toUpperCase() !== text[0]) {
+        return false;
+    }
+    return true;
+}
+
+// function formatTime(timeInMs) {
+//     const time = (Date(timeInMs)).split(' ');
+//     const month = new Date().getMonth() + 1;
+//     const month1 = ('' + month).length === 1 ? `0${month}` : `${month}`;
+//     return [time[3], month1, time[2], time[4]].join(' ');
+// }
 
 // CRUD operations
 // create array.push({initial data})
