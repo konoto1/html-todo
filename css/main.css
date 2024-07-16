@@ -89,10 +89,15 @@ form > button {
     max-width: 24rem;
     border: 1px solid #ccc;
     box-shadow: 0 0.1rem 0.4rem #0003;
+    background-color: #fff;
 }
 
 .toast.active {
     display:flex;
+}
+
+.toast[data-state=''] .icon {
+    display: none;
 }
 
 .toast > .icon {

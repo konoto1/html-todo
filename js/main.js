@@ -6,13 +6,19 @@ const formDOM = document.forms[0];
 const textInputDOM = formDOM.querySelector('input');
 const submitButtonDOM = formDOM.querySelector('button');
 const listDOM = document.querySelector('.list');
+const toastDOM = document.querySelector('.toast');
+const titleDOM = toastDOM.querySelector('.title')
+const messagesDOM = toastDOM.querySelector('.messages');
+const closeDOM = toastDOM.querySelector('.close > svg');
 
 const todoData = [];
 
 submitButtonDOM.addEventListener('click', e => {
     e.preventDefault();
 
-    if (!isValidText(textInputDOM.value)) {
+    const validationMsg = isValidText(textInputDOM.value);
+    if (validationMsg !== true) {
+        showToastError(validationMsg)
         return;
     }
 
@@ -23,6 +29,12 @@ submitButtonDOM.addEventListener('click', e => {
         }
     );
     renderList();
+
+    showToastSuccess('Task successfully created');
+
+    closeDOM.addEventListener('click', () => {
+        toastDOM.classList.remove('active');
+    });
 });
 
 function renderList() {
@@ -75,19 +87,23 @@ function renderTaskList() {
         const updateDOM = buttonsDOM[0];
         updateDOM.addEventListener('click', e => {
             e.preventDefault()
-
-            if (!isValidText(updateInputDOM.value)) {
+            const validationMsg = isValidText(updateInputDOM.value)
+            if (validationMsg !== true) {
+                showToastError(validationMsg);
                 return;
             }
 
+            showToastSuccess('Task successfully updated');
+
             todoData[i].text = updateInputDOM.value.trim();
-            console.log(updateInputDOM.value);
+
             renderTaskList();
         });
 
         const cancelDOM = buttonsDOM[1];
         cancelDOM.addEventListener('click', () => {
             articleEditFormDOM.classList.add('hidden');
+
         });
 
         const editDOM = buttonsDOM[3];
@@ -98,6 +114,7 @@ function renderTaskList() {
         const deleteDOM = buttonsDOM[4];
         deleteDOM.addEventListener('click', () => {
             todoData.splice(i, 1);
+            showToastInfo('Your  task was deleted');
             renderList();
         });
     }
@@ -116,10 +133,18 @@ function formatTime(timeInMS) {
 }
 
 function isValidText(text) {
-    if (typeof text !== 'string'
-        || text.trim() === ''
-        || text[0].toUpperCase() !== text[0]) {
-        return false;
+    if (typeof text !== 'string') {
+        return 'Input must be a string';
+    }
+    if (text === '') {
+        return 'Input can not be empty';
+    }
+
+    if (text.trim() === '') {
+        return 'Input can not be empty spaces';
+    }
+    if (text[0].toUpperCase() !== text[0]) {
+        return 'Input can not start with lowercase';
     }
     return true;
 }
@@ -138,3 +163,21 @@ function isValidText(text) {
 // delete array.splice(i, 1)
 
 
+function showToast(state, title, msg) {
+    toastDOM.classList.add('active');
+    toastDOM.dataset.state = state;
+    titleDOM.innerText = title;
+    messagesDOM.innerText = msg;
+}
+
+function showToastSuccess(msg) {
+    showToast('success', 'SUCCESS', msg);
+}
+
+function showToastInfo(msg) {
+    showToast('info', 'INFO', msg);
+}
+
+function showToastError(msg) {
+    showToast('error', 'ERROR', msg);
+}
