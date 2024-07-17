@@ -11,7 +11,18 @@ const titleDOM = toastDOM.querySelector('.title')
 const messagesDOM = toastDOM.querySelector('.messages');
 const closeDOM = toastDOM.querySelector('.close > svg');
 
-const todoData = [];
+
+closeDOM.addEventListener('click', () => {
+    toastDOM.classList.remove('active');
+});
+
+const localData = localStorage.getItem('tasks');
+let todoData = [];
+
+if (localData !== null) {
+    todoData = JSON.parse(localData);
+    renderList();
+}
 
 submitButtonDOM.addEventListener('click', e => {
     e.preventDefault();
@@ -28,13 +39,12 @@ submitButtonDOM.addEventListener('click', e => {
             createdAt: Date.now(),
         }
     );
+
+    localStorage.setItem('tasks', JSON.stringify(todoData));
     renderList();
 
     showToastSuccess('Task successfully created');
 
-    closeDOM.addEventListener('click', () => {
-        toastDOM.classList.remove('active');
-    });
 });
 
 function renderList() {
@@ -48,6 +58,7 @@ function renderList() {
 function renderEmptyList() {
     listDOM.classList.add('empty');
     listDOM.textContent = 'Empty';
+
 }
 
 function renderTaskList() {
@@ -57,10 +68,10 @@ function renderTaskList() {
     for (const todo of todoData) {
         HTML += `
          <article class="item">
-                 <div class="date">${formatTime(todo.createdAt)}</div>
+                 <div class="date">Created at: ${formatTime(todo.createdAt)}<br>Updated at: ${formatTime(todo.updatedAt)}</div>
                  <div class="text">${todo.text}</div>
                  <form class="hidden">
-                 <input type="text" />
+                 <input type="text"/>
                  <button type="submit">Update</button>
                  <button type="button">Cancel</button>
                  </form>
@@ -77,6 +88,7 @@ function renderTaskList() {
     listDOM.innerHTML = HTML;
 
     const articlesDOM = listDOM.querySelectorAll('article');
+
 
     for (let i = 0; i < articlesDOM.length; i++) {
         const articleDOM = articlesDOM[i];
@@ -96,8 +108,11 @@ function renderTaskList() {
             showToastSuccess('Task successfully updated');
 
             todoData[i].text = updateInputDOM.value.trim();
+            todoData[i]['updatedAt'] = Date.now();
 
+            localStorage.setItem('tasks', JSON.stringify(todoData));
             renderTaskList();
+
         });
 
         const cancelDOM = buttonsDOM[1];
@@ -115,21 +130,28 @@ function renderTaskList() {
         deleteDOM.addEventListener('click', () => {
             todoData.splice(i, 1);
             showToastInfo('Your  task was deleted');
+            localStorage.setItem('tasks', JSON.stringify(todoData))
             renderList();
         });
     }
 }
 
-function formatTime(timeInMS) {
-    const date = new Date();
-    const y = (date.getFullYear());
-    const m = (date.getMonth() + 1 < 10 ? '0' : '') + (date.getMonth() + 1);
-    // const d = (date.getDay()); //savaites diena
-    const d = (date.getDate() < 10 ? '0' : '') + date.getDate(); // menesio diena
-    const h = (date.getHours() < 10 ? '0' : '') + date.getHours();
-    const mn = (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
-    const s = (date.getSeconds() < 10 ? '0' : '') + date.getSeconds();
-    return `${y}-${m}-${d} ${h}-${mn}-${s}`
+
+
+function formatTime(timeInMs) {
+    if (timeInMs === undefined) {
+        return 'No updates yet';
+    } else {
+        const date = new Date(timeInMs);
+        const y = (date.getFullYear());
+        const m = (date.getMonth() + 1 < 10 ? '0' : '') + (date.getMonth() + 1);
+        // const d = (date.getDay()); //savaites diena
+        const d = (date.getDate() < 10 ? '0' : '') + date.getDate(); // menesio diena
+        const h = (date.getHours() < 10 ? '0' : '') + date.getHours();
+        const mn = (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+        const s = (date.getSeconds() < 10 ? '0' : '') + date.getSeconds();
+        return `${y}-${m}-${d} ${h}:${mn}:${s}`;
+    }
 }
 
 function isValidText(text) {
@@ -181,3 +203,6 @@ function showToastInfo(msg) {
 function showToastError(msg) {
     showToast('error', 'ERROR', msg);
 }
+
+
+
