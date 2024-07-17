@@ -3,7 +3,8 @@
 
 const h1DOM = document.querySelector('h1');
 const formDOM = document.forms[0];
-const textInputDOM = formDOM.querySelector('input');
+const textInputDOM = formDOM.querySelector('input[type="text"]');
+const colorInputDOM = formDOM.querySelector('input[type="color"]');
 const submitButtonDOM = formDOM.querySelector('button');
 const listDOM = document.querySelector('.list');
 const toastDOM = document.querySelector('.toast');
@@ -33,18 +34,16 @@ submitButtonDOM.addEventListener('click', e => {
         return;
     }
 
-    todoData.push(
-        {
-            text: textInputDOM.value.trim(),
-            createdAt: Date.now(),
-        }
-    );
-
+    todoData.push({
+        state: 'todo',
+        text: textInputDOM.value.trim(),
+        color: colorInputDOM.value,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+    });
     localStorage.setItem('tasks', JSON.stringify(todoData));
     renderList();
-
     showToastSuccess('Task successfully created');
-
 });
 
 function renderList() {
@@ -58,31 +57,30 @@ function renderList() {
 function renderEmptyList() {
     listDOM.classList.add('empty');
     listDOM.textContent = 'Empty';
-
 }
 
 function renderTaskList() {
     listDOM.classList.remove('empty');
-
     let HTML = ``;
     for (const todo of todoData) {
         HTML += `
-         <article class="item">
-                 <div class="date">Created at: ${formatTime(todo.createdAt)}<br>Updated at: ${formatTime(todo.updatedAt)}</div>
+         <article class="item" data-state="${todo.state}" style="border-left-color: ${todo.color};">
+                 <div class="date">Created at: ${formatTime(todo.createdAt)}</div>
+                 <div class="update-date ${todo.createdAt === todo.updatedAt ? 'hidden' : ''}">Updated at: ${formatTime(todo.updatedAt)}</div>
+                 <div class="state">Atlikta</div>
                  <div class="text">${todo.text}</div>
                  <form class="hidden">
-                 <input type="text"/>
-                 <button type="submit">Update</button>
-                 <button type="button">Cancel</button>
+                 <input type="text" value="${todo.text}">
+                 <button class="update" type="submit">Update</button>
+                 <button class="cancel" type="button">Cancel</button>
                  </form>
                  <div class="actions">
-                     <button>Done</button>
+                     <button class="done">Done</button>
                      <div class="divider"></div>
-                     <button>Edit</button>
-                     <button>Delete</button>
+                    ${todo.state === 'done' ? '' : '<button class="edit">Edit</button>'}
+                     <button class="delete">Delete</button>
                  </div>
              </article>`
-
     }
 
     listDOM.innerHTML = HTML;
@@ -94,48 +92,63 @@ function renderTaskList() {
         const articleDOM = articlesDOM[i];
         const articleEditFormDOM = articleDOM.querySelector('form');
         const updateInputDOM = articleEditFormDOM.querySelector('input');
-        const buttonsDOM = articleDOM.querySelectorAll('button');
 
-        const updateDOM = buttonsDOM[0];
-        updateDOM.addEventListener('click', e => {
-            e.preventDefault()
-            const validationMsg = isValidText(updateInputDOM.value)
-            if (validationMsg !== true) {
-                showToastError(validationMsg);
-                return;
-            }
 
-            showToastSuccess('Task successfully updated');
+        const updateDOM = articleDOM.querySelector('button.update');
 
-            todoData[i].text = updateInputDOM.value.trim();
-            todoData[i]['updatedAt'] = Date.now();
+        if (updateDOM !== null) {
 
-            localStorage.setItem('tasks', JSON.stringify(todoData));
-            renderTaskList();
+            updateDOM.addEventListener('click', e => {
+                e.preventDefault()
+                const validationMsg = isValidText(updateInputDOM.value)
+                if (validationMsg !== true) {
+                    showToastError(validationMsg);
+                    return;
+                }
+                console.log(articleDOM.querySelector('.update-date'));
+                showToastSuccess('Task successfully updated');
+                todoData[i].updatedAt = Date.now();
+                todoData[i].text = updateInputDOM.value.trim();
+                renderList();
+                localStorage.setItem('tasks', JSON.stringify(todoData));
+            });
+        }
 
-        });
+        const cancelDOM = articleDOM.querySelector('button.cancel');
+        if (cancelDOM !== null) {
+            cancelDOM.addEventListener('click', () => {
+                articleEditFormDOM.classList.add('hidden');
+            });
+        }
 
-        const cancelDOM = buttonsDOM[1];
-        cancelDOM.addEventListener('click', () => {
-            articleEditFormDOM.classList.add('hidden');
+        const doneDOM = articleDOM.querySelector('button.done');
+        if (doneDOM !== null) {
+            doneDOM.addEventListener('click', () => {
+                todoData[i].state = 'done';
+                localStorage.setItem('tasks', JSON.stringify(todoData));
+                renderList();
+            });
+        }
 
-        });
+        const editDOM = articleDOM.querySelector('button.edit');
+        if (editDOM !== null) {
+            editDOM.addEventListener('click', () => {
+                articleEditFormDOM.classList.remove('hidden');
+                localStorage.setItem('tasks', JSON.stringify(todoData));
+            });
+        }
 
-        const editDOM = buttonsDOM[3];
-        editDOM.addEventListener('click', () => {
-            articleEditFormDOM.classList.remove('hidden');
-        });
-
-        const deleteDOM = buttonsDOM[4];
-        deleteDOM.addEventListener('click', () => {
-            todoData.splice(i, 1);
-            showToastInfo('Your  task was deleted');
-            localStorage.setItem('tasks', JSON.stringify(todoData))
-            renderList();
-        });
+        const deleteDOM = articleDOM.querySelector('button.delete');
+        if (deleteDOM !== null) {
+            deleteDOM.addEventListener('click', () => {
+                todoData.splice(i, 1);
+                showToastInfo('Your  task was deleted');
+                localStorage.setItem('tasks', JSON.stringify(todoData))
+                renderList();
+            });
+        }
     }
 }
-
 
 
 function formatTime(timeInMs) {
@@ -203,6 +216,70 @@ function showToastInfo(msg) {
 function showToastError(msg) {
     showToast('error', 'ERROR', msg);
 }
+
+// ######################################
+
+const sortingListDOM = document.querySelector('.list-actions');
+const sortingButtonsDOM = sortingListDOM.querySelectorAll('button');
+
+//Sorting: Time 0-9
+const btnTime09DOM = sortingButtonsDOM[0];
+btnTime09DOM.addEventListener('click', () => {
+    sortingListDOM.querySelector('.active').classList.remove('active');
+    btnTime09DOM.classList.add('active');
+    todoData.sort((a, b) => a.createdAt - b.createdAt);
+    renderTaskList();
+})
+
+//Sorting: Time 9-0
+const btnTime90DOM = sortingButtonsDOM[1];
+btnTime90DOM.addEventListener('click', () => {
+    sortingListDOM.querySelector('.active').classList.remove('active');
+    btnTime90DOM.classList.add('active');
+    todoData.sort((a, b) => b.createdAt - a.createdAt);
+    renderTaskList();
+})
+
+//Sorting: Color A-Z
+const btnColorAZDOM = sortingButtonsDOM[2];
+btnColorAZDOM.addEventListener('click', () => {
+    sortingListDOM.querySelector('.active').classList.remove('active');
+    btnColorAZDOM.classList.add('active');
+    todoData.sort((a, b) => (a.color < b.color) ? -1 : (a.color === b.color) ? 0 : 1);
+    renderTaskList();
+});
+
+//Sorting: Color Z-A
+const btnColorZADOM = sortingButtonsDOM[3];
+btnColorZADOM.addEventListener('click', () => {
+    sortingListDOM.querySelector('.active').classList.remove('active');
+    btnColorZADOM.classList.add('active');
+    todoData.sort((a, b) => (b.color < a.color) ? -1 : (a.color === b.color) ? 0 : 1);
+    renderTaskList();
+});
+
+//Sorting: Name A-Z
+const btnNameAZDOM = sortingButtonsDOM[4];
+btnNameAZDOM.addEventListener('click', () => {
+    sortingListDOM.querySelector('.active').classList.remove('active');
+    btnNameAZDOM.classList.add('active');
+    todoData.sort((a, b) => (a.text < b.text) ? -1 : (a.color === b.color) ? 0 : 1);
+    renderTaskList();
+});
+
+//Sorting: Name Z-A
+const btnNameZADOM = sortingButtonsDOM[5];
+btnNameZADOM.addEventListener('click', () => {
+    sortingListDOM.querySelector('.active').classList.remove('active');
+    btnNameZADOM.classList.add('active');
+    todoData.sort((a, b) => (b.text < a.text) ? -1 : (a.color === b.color) ? 0 : 1);
+    renderTaskList();
+});
+
+
+// ######################################
+
+
 
 
 
